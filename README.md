@@ -25,6 +25,27 @@
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Hardware](#hardware)
+- [Getting started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Repository layout](#repository-layout)
+  - [Configuration](#configuration)
+  - [Build and flash](#build-and-flash)
+  - [Running in MQTT mode](#running-in-mqtt-mode)
+  - [Running in LoRaWAN mode](#running-in-lorawan-mode)
+  - [Reproducing the energy measurements](#reproducing-the-energy-measurements)
+  - [Reproducing the bonus experiments](#reproducing-the-bonus-experiments)
+- [Software architecture](#software-architecture)
+- [Signal processing](#signal-processing)
+- [Communication](#communication)
+- [Performance evaluation](#performance-evaluation)
+- [Bonus](#bonus)
+
+---
+
 ## Overview
 
 This project implements an **adaptive sampling** pipeline on an ESP32-S3,
@@ -67,6 +88,116 @@ The complete wiring is shown in the figure below.
 <p align="center">
   <img src="sampling/docs/hardware_setup.png" alt="Hardware wiring" width="550">
 </p>
+
+---
+
+## Getting started
+
+This section explains how to reproduce the system end-to-end: set up the toolchain, configure the firmware, build and flash it, run it in MQTT or LoRaWAN mode, and reproduce the experiments reported in the rest of the README.
+
+### Prerequisites
+
+- The **hardware** listed in the [Hardware](#hardware) section.
+- **[PlatformIO](https://platformio.org/)** (either the Core CLI or the VS Code extension). The firmware is a PlatformIO project targeting the `heltec_wifi_lora_32_V3` board.
+- A **[Mosquitto](https://mosquitto.org/) broker** reachable from the ESP32 on the same LAN — required for MQTT mode.
+- A free **[The Things Network](https://www.thethingsnetwork.org/) account** with an EU868 end-device registered in OTAA — required for LoRaWAN mode.
+- *(Optional, for the energy measurements)* a second ESP32 board and an **INA219** current-sense module.
+
+### Repository layout
+
+```
+iot_individual_assignment/
+├── sampling/                 # Firmware running on the ESP32 under test
+│   ├── src/                  # main.cpp + one .cpp per module
+│   ├── include/              # Matching headers; config.h holds all compile-time options
+│   ├── docs/                 # Figures and GIFs used in this README
+│   └── platformio.ini
+├── energy_consumption/       # Monitor firmware for the INA219 setup
+│   ├── src/main.cpp
+│   ├── include/config.h
+│   └── platformio.ini
+└── README.md
+```
+
+### Configuration
+
+All compile-time options live in `sampling/include/config.h`. The main flags are:
+
+**Transmission mode** (pick exactly one):
+- `#define USE_LORAWAN` → LoRaWAN + TTN
+- commented out → WiFi + MQTT
+- `#define SKIP_TX` → no radio at all. This is the configuration used to record the energy-baseline traces shown in the [Performance evaluation](#performance-evaluation) plots.
+
+**Sampling mode:**
+- commented out *(default)* → adaptive mode
+- `#define SKIP_FFT` → pure oversampling at `MAX_SAMPLING_FREQ`
+
+**Bonus (noise + filters):**
+- `#define BONUS` → injects Gaussian noise and sparse spikes into the oversampled buffer and applies a filter before the FFT.
+- inside the `#ifdef BONUS` block, `ANOMALY_PROB` and `FILTER_WINDOW` are tunable to sweep the test matrix reported in the bonus section. `ACTIVE_FILTER` (`FILTER_ZSCORE` or `FILTER_HAMPEL`) selects which filter's `f_max` drives the adaptive sampler downstream: both filters are always evaluated and their detection metrics are printed to serial, but only one of the two estimates is handed to the runtime pipeline.
+
+**Credentials (MQTT mode):** `WIFI_SSID`, `WIFI_PASS`, `MQTT_BROKER` (IP of the machine running Mosquitto).
+
+**Credentials (LoRaWAN mode):** `LORA_JOIN_EUI`, `LORA_DEV_EUI`, `LORA_APP_KEY` — OTAA keys copied from the TTN console.
+
+**Aggregation:** `WINDOW_DURATION_SEC` — window length in seconds *(default 30)*.
+
+### Build and flash
+
+```bash
+cd sampling
+pio run                   # compile
+pio run -t upload         # flash
+pio device monitor        # open serial monitor at 115200 baud
+```
+
+If your board is not on `COM3`, either edit `upload_port` / `monitor_port` in `platformio.ini` or pass `--upload-port <your_port>` on the command line.
+
+### Running in MQTT mode
+
+1. On the PC, start Mosquitto:
+   ```bash
+   mosquitto -v
+   ```
+2. In `config.h`, leave `USE_LORAWAN` commented out and fill in `WIFI_SSID`, `WIFI_PASS` and `MQTT_BROKER` with the IP of the PC running Mosquitto.
+3. Build and flash the firmware, then subscribe on the PC:
+   ```bash
+   mosquitto_sub -h <broker_ip> -t iot/sensor/avg
+   ```
+4. Every `WINDOW_DURATION_SEC` seconds a JSON message `{"w":N,"avg":V.VVVV}` is published — one aggregated value per window.
+
+### Running in LoRaWAN mode
+
+1. Register the device on the [TTN console](https://eu1.cloud.thethings.network/) as an OTAA EU868 end-device, then copy `DevEUI`, `JoinEUI` and `AppKey` into `config.h`.
+2. Uncomment `#define USE_LORAWAN` and make sure `SKIP_TX` is commented out.
+3. In the TTN application, install the following payload formatter so that `avg` and `window` appear decoded in the live-data view:
+   ```javascript
+   function decodeUplink(input) {
+     const b = input.bytes;
+     const avg = ((b[0] << 8) | b[1]) / 100.0;
+     const window = (b[2] << 8) | b[3];
+     return { data: { avg, window } };
+   }
+   ```
+4. Build and flash the firmware. The device performs the OTAA join at boot and then emits one uplink per aggregation window, visible in the TTN live-data tab.
+
+### Reproducing the energy measurements
+
+The current traces shown in [Performance evaluation](#performance-evaluation) were captured with an **INA219** module inserted in series with the power supply of the ESP32 under test, as illustrated in the figure in that section. A **second ESP32** acts as the INA219 host and streams the instantaneous current over USB.
+
+- Flash the firmware under test (the main `sampling/` project) on the first board with the desired `config.h` options — for example, `SKIP_TX` for the baseline, or adaptive + MQTT, or adaptive + LoRaWAN.
+- Flash the monitor firmware (the `energy_consumption/` project) on the second board. It reads the INA219 over I2C and prints the current on its serial monitor at 115200 baud.
+- Capture the serial log of the monitor board and plot it to obtain the current-vs-time traces.
+
+### Reproducing the bonus experiments
+
+To reproduce the Z-score vs Hampel comparison:
+1. Enable `#define BONUS` in `config.h`.
+2. Sweep `ANOMALY_PROB` over `0.01f`, `0.05f`, `0.10f` and `FILTER_WINDOW` over `5`, `15`, `40`, `100`.
+3. Set `ACTIVE_FILTER` to `FILTER_ZSCORE` or `FILTER_HAMPEL`.
+4. Rebuild, flash, and read the serial output: for every parameter combination the firmware reports the metrics used in the bonus section (adaptive frequency after filtering, detection TPR/FPR, MER and filter execution time).
+
+Each parameter combination is a separate run; the results shown in the bonus section were aggregated across the full sweep.
 
 ---
 

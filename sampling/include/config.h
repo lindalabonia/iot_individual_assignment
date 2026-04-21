@@ -37,7 +37,9 @@
     // MAD = median absolute deviation = median(|x[i] - median|)
     #define HAMPEL_THRESHOLD   3.0f      
 
-    // Which filtered buffer feeds the adaptive sampler after the bonus phase
+    // Both filters are always evaluated at boot and their TPR/FPR/MER/exec
+    // are printed to serial. ACTIVE_FILTER only selects which of the two
+    // f_max estimates is handed to the adaptive sampler downstream.
     #define FILTER_ZSCORE      0
     #define FILTER_HAMPEL      1
     #define ACTIVE_FILTER      FILTER_HAMPEL
