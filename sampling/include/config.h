@@ -85,12 +85,9 @@ extern const float frequencies[NUM_COMPONENTS];
 
 // --- WiFi + MQTT (only used when USE_LORAWAN is NOT defined) ---
 #ifndef USE_LORAWAN
-//#define WIFI_SSID     "REDACTED"
-//#define WIFI_PASS     "REDACTED"
-#define WIFI_SSID     "REDACTED"
-#define WIFI_PASS     "REDACTED"
-//#define MQTT_BROKER   "REDACTED"  // IP of PC running Mosquitto
-#define MQTT_BROKER   "REDACTED"  
+#define WIFI_SSID     ""
+#define WIFI_PASS     ""
+#define MQTT_BROKER   ""  // IP of PC running Mosquitto
 #define MQTT_PORT     1883
 #define MQTT_TOPIC    "iot/sensor/avg"
 #endif
@@ -101,10 +98,9 @@ extern const float frequencies[NUM_COMPONENTS];
 // OTAA keys from TTN Console — MSB format.
 // LoRaWAN 1.0.x uses a single key (AppKey) for both app and network encryption.
 // RadioLib wants two key parameters; we pass the same AppKey for both.
-#define LORA_JOIN_EUI  0x0000000000000000
-#define LORA_DEV_EUI   REDACTED
-#define LORA_APP_KEY   { REDACTED, \
-                         REDACTED }
+#define LORA_JOIN_EUI  
+#define LORA_DEV_EUI   
+#define LORA_APP_KEY   { }
 
 // LoRaWAN uses "data rate" (DR) instead of SF directly, because DR encodes
 // both spreading factor and bandwidth in a single index.
