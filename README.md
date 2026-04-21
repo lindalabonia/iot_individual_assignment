@@ -1,11 +1,13 @@
 # Adaptive Sampling IoT System on ESP32-S3
 
 <!-- Badges: optional, you can remove or swap these. -->
-![Platform](https://img.shields.io/badge/platform-ESP32--S3-blue)
-![Framework](https://img.shields.io/badge/framework-Arduino%20%2B%20FreeRTOS-orange)
-![Build](https://img.shields.io/badge/build-PlatformIO-informational)
-![LoRaWAN](https://img.shields.io/badge/LoRaWAN-TTN%20EU868-brightgreen)
-![MQTT](https://img.shields.io/badge/MQTT-Mosquitto-660066)
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-ESP32--S3-blue" alt="Platform">
+  <img src="https://img.shields.io/badge/framework-Arduino%20%2B%20FreeRTOS-orange" alt="Framework">
+  <img src="https://img.shields.io/badge/build-PlatformIO-informational" alt="Build">
+  <img src="https://img.shields.io/badge/LoRaWAN-TTN%20EU868-brightgreen" alt="LoRaWAN">
+  <img src="https://img.shields.io/badge/MQTT-Mosquitto-660066" alt="MQTT">
+</p>
 
 ---
 
@@ -72,8 +74,9 @@ The complete wiring is shown in the figure below.
 
 The firmware is organized as a small FreeRTOS pipeline running on the two ESP32-S3 cores. Depending on the build, the system uses five tasks in MQTT mode or six tasks in LoRa mode. The build mode is selected at compile time through `config.h`, which enables either the MQTT or the LoRa communication path.
 
-
-![System architecture](sampling/docs/system_architecture.png)
+<p align="center">
+  <img src="sampling/docs/system_architecture.png" alt="System architecture" width="720">
+</p>
 
 **Core 0**
 - **DAC Generator** (pri 2, forever) — writes the precomputed signal LUT to the MCP4725 over I2C.
@@ -112,8 +115,6 @@ signalling.
 
 Shared globals (`adaptiveSamplingFreq`, `detectedMaxFreq`, `fftDone`, and the FFT buffers) are declared **`volatile`** so that updates made by a task on one core are immediately visible to tasks on the other, without the compiler caching stale values in CPU registers.
 
-
-
 ---
 
 ## Signal processing
@@ -136,7 +137,6 @@ table** at boot. The LUT is a standard optimisation: at high signal
 frequencies the cost of a `sin()` call per sample becomes significant
 relative to the time between writes, so precomputing the waveform
 once and cycling through the array is much cheaper.
-
 
 #### Upper bound on the generated signal frequency
 
@@ -164,8 +164,6 @@ $$
 f_{\text{signal,max}} = \frac{13.8\,\text{kHz}}{40} \approx 345\,\text{Hz}
 $$
 
-------
-
 A second limit is introduced by the software design. In order to release the CPU between two writes, `vTaskDelay()` should be used and the time between two consecutive writes must be at least 1 ms.
 
 $$
@@ -180,18 +178,15 @@ $$
 
 Therefore, although the hardware upper bound is much higher, the practical limit adopted in this project is 25 Hz, so that signal generation can coexist with the other tasks.
 
-
------------
-
-### Signal Sampling 
-
+### Signal Sampling
 
 The ADC is an internal peripheral of the ESP32-S3, and a single `analogRead()` takes about **10–20 µs**, depending on the ADC configuration. This corresponds to a theoretical sampling-rate ceiling in the **50–100 kHz** range.
 
 Since the generated test signals are intentionally limited to **25 Hz**, an initial oversampling rate of **500 Hz** was chosen. This value is already much higher than the signal frequency and is therefore sufficient to capture the waveform correctly. The figure below shows that the oversampler reconstructs the signal $ \sin(2\pi \cdot 5t) $ accurately.
 
-![Oversampled signal at 500 Hz](sampling/docs/sin5hz_ric_oversam.png)
-
+<p align="center">
+  <img src="sampling/docs/sin5hz_ric_oversam.png" alt="Oversampled signal at 500 Hz" width="620">
+</p>
 
 #### Sampling Theorem
 
@@ -207,15 +202,14 @@ and the original signal can no longer be recovered from the samples.
 
 The animation below illustrates the theorem visually:
 
-![Sampling theorem animation](sampling/docs/nyquist.gif)
-
-
+<p align="center">
+  <img src="sampling/docs/nyquist.gif" alt="Sampling theorem animation" width="520">
+</p>
 
 This is exactly why the FFT step matters: once we know `f_max`, we
 can drop the sampling rate to just above `2 · f_max` and still
 reconstruct the signal — saving both energy (fewer ADC reads per
 second) and data volume (fewer samples to aggregate and transmit).
-
 
 ### Finding `f_max`
 
@@ -239,7 +233,6 @@ attenuating the signal amplitude toward the edges of the buffer, the
 Hamming function cancels the boundary discontinuities, improving
 spectral identification and enabling a cleaner, more accurate
 extraction of the dominant frequency `f_max`.
-
 
 **Peak selection.**  
 After DC offset removal and Hamming windowing, the FFT is converted into a magnitude spectrum and scanned to identify $f_{\max}$. To avoid selecting noise or leakage bins, only bins that satisfy the following two conditions are kept:
@@ -278,9 +271,11 @@ $$
 
 The resulting adaptive rate is therefore $f_{\text{adaptive}} \approx 10.7$ Hz, corresponding to about a $47\times$ reduction with respect to the initial 500 Hz oversampling rate, while still preserving the waveform correctly.
 
-![Adaptive sampling of the 5 Hz signal](sampling/docs/sin5hz_ric_adapt.png)
+<p align="center">
+  <img src="sampling/docs/sin5hz_ric_adapt.png" alt="Adaptive sampling of the 5 Hz signal" width="620">
+</p>
 
-
+---
 
 ## Communication
 
@@ -299,7 +294,9 @@ of averages in real time — the screenshot below is taken while the
 device is generating the composite test signal
 `s(t) = 2·sin(2π·3t) + 4·sin(2π·5t)`.
 
-![MQTT subscriber receiving window averages](sampling/docs/mqtt_sub.png)
+<p align="center">
+  <img src="sampling/docs/mqtt_sub.png" alt="MQTT subscriber receiving window averages" width="640">
+</p>
 
 ### LoRaWAN + TTN
 
@@ -342,23 +339,29 @@ to **The Things Network** (TTN).
   - **RX2:** +6 s
 
   So the radio remains busy for about **7 s per transmission**. This is why LoRa TX runs in a dedicated task on Core 0. See the animation below:
-  ![Class A uplink + RX1/RX2 windows](sampling/docs/classeA_lora.gif)
+  <p align="center">
+    <img src="sampling/docs/classeA_lora.gif" alt="Class A uplink + RX1/RX2 windows" width="520">
+  </p>
   
 
 The image below shows the TTN console correctly receiving the
 aggregate values. The test signal during the capture is the same
 used for MQTT, `s(t) = 2·sin(2π·3t) + 4·sin(2π·5t)`:
 
-![TTN live data — uplink stream](sampling/docs/ttn_live_data.png)
+<p align="center">
+  <img src="sampling/docs/ttn_live_data.png" alt="TTN live data — uplink stream" width="720">
+</p>
 
-
+---
 
 ## Performance evaluation
 
 All current measurements reported in this section were taken with the
 setup shown below using an **INA219** current-sense module.
 
-![Energy measurement circuit](sampling/docs/circuit_image_energy.png)
+<p align="center">
+  <img src="sampling/docs/circuit_image_energy.png" alt="Energy measurement circuit" width="520">
+</p>
 
 ### Energy: oversampling vs adaptive sampling
 
@@ -385,7 +388,9 @@ transmission every 30 s; both traces plot instantaneous current in
 mA, and both share the same ~50 mA baseline (the "always-on" cost of
 the DAC generator + adaptive sampler, already analysed above).
 
-![LoRa current profile](sampling/docs/consumo_lora.png)
+<p align="center">
+  <img src="sampling/docs/consumo_lora.png" alt="LoRa current profile" width="640">
+</p>
 
 In **LoRa** mode the trace is almost flat at baseline between events:
 once per window the current jumps sharply to ~140 mA during the
@@ -393,7 +398,9 @@ uplink transmission. The
 Class A receive windows that follow each TX draw so little power that they do not
 even emerge visibly from the baseline on this scale.
 
-![WiFi current profile](sampling/docs/consumo_wifi.png)
+<p align="center">
+  <img src="sampling/docs/consumo_wifi.png" alt="WiFi current profile" width="640">
+</p>
 
 In **WiFi** mode the transmission event itself is visible as a tall
 peak at ~200 mA, but a comb of smaller peaks sits on top of the idle
@@ -420,14 +427,18 @@ To reflect the capabilities of each protocol stack, two distinct measurement met
   between publish and reception of the same message. 
 The two scenarios are not identical, but the **order of magnitude** is what matters.
 
-![LoRa latency](sampling/docs/latency_lora.png)
+<p align="center">
+  <img src="sampling/docs/latency_lora.png" alt="LoRa latency" width="640">
+</p>
 
 In **LoRa** mode the measured values sit around ~6 s, consistent with
 expectations: TTN opens RX1 at +5 s and RX2 at +6 s after each uplink,
 and `sendReceive()` returns as soon as a downlink is received in one
 of the two windows, or when RX2 closes with no downlink. This floor is structural and cannot be reduced without leaving Class A.
 
-![WiFi latency](sampling/docs/latency_wifi.png)
+<p align="center">
+  <img src="sampling/docs/latency_wifi.png" alt="WiFi latency" width="640">
+</p>
 
 In **WiFi** mode latencies fluctuate between ~15 ms and ~144 ms, with
 visible jitter from one window to the next. The jitter comes from
@@ -459,9 +470,7 @@ encodes the same information in 4 binary bytes. On top of this, MQTT also carrie
 significantly larger protocol headers than LoRaWAN, so the gap on the actual bytes
 on the air is even wider than the payload comparison alone suggests.
 
-
-
-
+---
 
 ## Bonus
 
@@ -485,7 +494,9 @@ $$
 
 In all three cases, the system consistently reported an FFT-estimated maximum frequency of about $25.39$ Hz. This value is coherent with the FFT resolution.
 
-![FFT output for signal 1](sampling/docs/sig1.png)
+<p align="center">
+  <img src="sampling/docs/sig1.png" alt="FFT output for signal 1" width="640">
+</p>
 
 ### 2. Anomaly-aware filtering under noisy and spike-contaminated signals
 
@@ -526,12 +537,13 @@ $$
 
 When the condition is satisfied, the detected anomaly is replaced with the local median. The factor $1.4826$ rescales the MAD so that it is comparable to the standard deviation under Gaussian assumptions. Since median and MAD are much less sensitive to outliers than mean and standard deviation, the Hampel filter is expected to be more robust when the signal is affected by impulsive spikes.
 
-
 #### Adaptive sampling frequency before and after filtering
 
 The graph compares the adaptive sampling rates obtained after the FFT is computed in three cases: dirty signal, signal filtered with Z-score and signal filtered with Hampel.
 
-![Adaptive sampling rate after Z-score and Hampel filtering](sampling/docs/fig4_adaptive_rate.png)
+<p align="center">
+  <img src="sampling/docs/fig4_adaptive_rate.png" alt="Adaptive sampling rate after Z-score and Hampel filtering" width="700">
+</p>
 
 The first clear result is that the dirty signal always leads to very high adaptive rates, close to the oversampling regime. The reason is that a spike is a very abrupt variation in the time domain which produces in the spectrum energy spread over a wide frequency range. Because of this, the FFT interprets the dirty signal as containing much faster components than the original sinusoid, and the estimated $f_{\max}$ becomes artificially high.
 
@@ -545,19 +557,21 @@ With $W=40$, the filter still removes a relevant part of the spike contamination
 
 The case $W=100$ is particularly interesting. Since the signal frequency is $5$ Hz and the oversampling frequency is $500$ Hz, one period of the clean signal is represented by exactly $100$ samples. This means that the filter window spans one full cycle of the waveform. For a sinusoidal signal ranging between $0$ and $3.3$ V, the median of the window is approximately $1.65$ V. Therefore, when a spike is detected, it is replaced by a value close to $1.65$ V independently of the local phase of the signal. If the neighbouring samples are far from this value, the replacement introduces a sharp local transition. This abrupt step injects new high-frequency components into the spectrum, causing again a strong FFT response at high frequencies. 
 
-
 #### Detection performance
 
-![TPR and FPR of Z-score and Hampel filters under different anomaly probabilities and window sizes](sampling/docs/fig1_detection.png)
+<p align="center">
+  <img src="sampling/docs/fig1_detection.png" alt="TPR and FPR of Z-score and Hampel filters under different anomaly probabilities and window sizes" width="700">
+</p>
 
 The graph shows that the **Z-score filter** has a **decreasing TPR**. The reason is that spikes increase the local mean and standard deviation, and therefore also the detection threshold; as a result, many anomalies are no longer detected. Using larger windows slightly mitigates the impact of a single spike, but not enough to obtain good detection performance. On the other hand, the **FPR is null in all cases**. This is the other side of the same effect: the filter is very conservative and rarely classifies normal samples as anomalies.
 
 The **Hampel filter** shows much better detection performance overall, with **high TPR** and **low FPR** in most configurations. The results degrade only slightly for small windows, because multiple nearby outliers are more likely to contaminate the local median and, consequently, the detection threshold. In these cases, some anomalies may escape detection. 
 
-
 #### Mean Error Reduction (MER)
 
-![Mean Error Reduction of Z-score and Hampel filters under different anomaly probabilities and window sizes](sampling/docs/fig2_mer.png)
+<p align="center">
+  <img src="sampling/docs/fig2_mer.png" alt="Mean Error Reduction of Z-score and Hampel filters under different anomaly probabilities and window sizes" width="700">
+</p>
 
 To evaluate how well the filters reconstruct the clean signal, the **Mean Error Reduction (MER)** is used:
 
@@ -573,10 +587,11 @@ The **Hampel filter** instead shows consistently high MER values, confirming tha
 
 This graph also highlights an important point: a high MER does not automatically imply a correct recovery of the FFT-estimated `f_max`. MER measures the average time-domain reconstruction quality, while `f_max` is much more sensitive to residual local discontinuities and high-frequency artefacts.
 
-
 #### Execution time and computational trade-off
 
-![Execution time of Z-score and Hampel filters under different anomaly probabilities and window sizes](sampling/docs/fig3_exec.png)
+<p align="center">
+  <img src="sampling/docs/fig3_exec.png" alt="Execution time of Z-score and Hampel filters under different anomaly probabilities and window sizes" width="700">
+</p>
 
 For both filters, the execution time increases with the window size, since the sliding window must be processed at every sample. The increase is much steeper for Hampel, because it relies on repeated sorting operations to compute median and MAD, whereas Z-score only computes mean and standard deviation.
 
