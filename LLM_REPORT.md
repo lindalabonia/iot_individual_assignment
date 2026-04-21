@@ -1,0 +1,11 @@
+# LLM Usage — Methodology and Reflections
+
+During this project, I used multiple Large Language Models, each one for the tasks it was best at. I mainly used **Claude Code** for writing, refactoring and debugging code, and **Gemini Pro** to better understand theoretical concepts, interpret graphs and reason through results. I found that the best approach is to use them separately, giving each one the kind of work it handles well.
+
+**Claude Code** was stronger on the technical side: writing clean code, fixing bugs and keeping a clear picture of the whole project. **Gemini Pro** was more useful when I needed to understand a concept, make sense of some results or get a clearer explanation of a specific topic.
+
+The way I worked with these tools was not based on a single prompt, but was a more iterative process: first understanding the theory, then writing a first version of the code, then improving its structure and style and finally debugging, testing and refining. Since this went on throughout the entire project and involved a large number of exchanges, I cannot reconstruct the exact prompts I used.
+
+I also tried using one LLM to generate a well-structured prompt for another, but I found that the best results came when I wrote the requests myself, clearly and simply. In general, the more specific you are, the better the output. The most effective approach was to reason through the problem first, identify exactly what needed to be done, and only then ask the LLM to implement it. Being vague is fine when you just want to understand something, but in the implementation phase, the less specific the prompt, the less control you have over what gets produced.
+
+Overall, I think these tools are almost essential in modern development. They speed things up a lot and help both on the practical and the conceptual side. That said, they are not perfect: they often produce code that looks right but has subtle mistakes, or they fix one problem and create another. This is why reviewing, understanding and refining the output is still crucial — and sometimes takes more time than writing the code in the first place.
