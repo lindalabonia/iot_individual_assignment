@@ -63,7 +63,7 @@ The bonus part further extends the evaluation by testing the robustness of the F
 The complete wiring is shown in the figure below.
 
 <p align="center">
-  <img src="sampling\docs\hardware_setup.png" alt="Hardware wiring" width="550">
+  <img src="sampling/docs/hardware_setup.png" alt="Hardware wiring" width="550">
 </p>
 
 ---
@@ -142,41 +142,41 @@ once and cycling through the array is much cheaper.
 
 From the hardware side, each MCP4725 write occupies about 29 I2C bits, including the 12-bit DAC value and the protocol overhead required for the transaction. With a 400 kHz I2C clock, this gives a minimum write time of
 
-\[
+$$
 T_{\text{write}} = \frac{29}{400\,000} \approx 72.5\,\mu s
-\]
+$$
 
 and therefore a theoretical maximum DAC update rate of
 
-\[
+$$
 f_{\text{update,max}} = \frac{1}{T_{\text{write}}} \approx 13.8\,\text{kHz}
-\]
+$$
 
 A further design choice in this project is to approximate each signal period with 40 DAC points, in order to obtain a reasonably smooth waveform. This means that the DAC update rate and the signal frequency are related by
 
-\[
+$$
 f_{\text{update}} = 40 \cdot f_{\text{signal}}
-\]
+$$
 
 so the corresponding theoretical hardware upper bound on the generated signal frequency is
 
-\[
+$$
 f_{\text{signal,max}} = \frac{13.8\,\text{kHz}}{40} \approx 345\,\text{Hz}
-\]
+$$
 
 ------
 
 A second limit is introduced by the software design. In order to release the CPU between two writes, `vTaskDelay()` should be used and the time between two consecutive writes must be at least 1 ms.
 
-\[
+$$
 T_{\text{write spacing}} = \frac{1000}{40 \cdot f_{\text{signal}}} \geq 1 \text{ ms}
-\]
+$$
 
 which gives
 
-\[
+$$
 f_{\text{signal,max}} \leq \frac{1000}{40} = 25 \text{ Hz}
-\]
+$$
 
 Therefore, although the hardware upper bound is much higher, the practical limit adopted in this project is 25 Hz, so that signal generation can coexist with the other tasks.
 
@@ -188,7 +188,7 @@ Therefore, although the hardware upper bound is much higher, the practical limit
 
 The ADC is an internal peripheral of the ESP32-S3, and a single `analogRead()` takes about **10–20 µs**, depending on the ADC configuration. This corresponds to a theoretical sampling-rate ceiling in the **50–100 kHz** range.
 
-Since the generated test signals are intentionally limited to **25 Hz**, an initial oversampling rate of **500 Hz** was chosen. This value is already much higher than the signal frequency and is therefore sufficient to capture the waveform correctly. The figure below shows that the oversampler reconstructs the signal \( \sin(2\pi \cdot 5t) \) accurately.
+Since the generated test signals are intentionally limited to **25 Hz**, an initial oversampling rate of **500 Hz** was chosen. This value is already much higher than the signal frequency and is therefore sufficient to capture the waveform correctly. The figure below shows that the oversampler reconstructs the signal $ \sin(2\pi \cdot 5t) $ accurately.
 
 ![Oversampled signal at 500 Hz](sampling/docs/sin5hz_ric_oversam.png)
 
@@ -207,7 +207,7 @@ and the original signal can no longer be recovered from the samples.
 
 The animation below illustrates the theorem visually:
 
-![Sampling theorem animation](sampling\docs\nyquist.gif)
+![Sampling theorem animation](sampling/docs/nyquist.gif)
 
 
 
@@ -224,13 +224,13 @@ oversampled buffer. Both address *artefacts* — things the FFT would
 see but that are not really part of the signal.
 
 **DC offset removal.**  
-Because the MCP4725 can only output positive voltages, the generated waveform is not \(s(t)\) itself, but rather
+Because the MCP4725 can only output positive voltages, the generated waveform is not $s(t)$ itself, but rather
 
-\[
+$$
 x(t) = 2048 + s(t)
-\]
+$$
 
-that is, the signal shifted around the DAC mid-scale. In the frequency domain, the constant term \(2048\) appears as a large spike at bin 0, i.e. the DC component. This would dominate the spectrum and make the 5% relative threshold depend on the DC offset rather than on the actual sinusoidal components. To avoid this, the mean of the 512 oversampled samples is subtracted before computing the FFT, so that the DC component is removed and the spectrum reflects only the real frequency content of \(s(t)\).
+that is, the signal shifted around the DAC mid-scale. In the frequency domain, the constant term $2048$ appears as a large spike at bin 0, i.e. the DC component. This would dominate the spectrum and make the 5% relative threshold depend on the DC offset rather than on the actual sinusoidal components. To avoid this, the mean of the 512 oversampled samples is subtracted before computing the FFT, so that the DC component is removed and the spectrum reflects only the real frequency content of $s(t)$.
 
 **Hamming windowing.**
 A Hamming window is applied to suppress the **spectral leakage**
@@ -242,7 +242,7 @@ extraction of the dominant frequency `f_max`.
 
 
 **Peak selection.**  
-After DC offset removal and Hamming windowing, the FFT is converted into a magnitude spectrum and scanned to identify \(f_{\max}\). To avoid selecting noise or leakage bins, only bins that satisfy the following two conditions are kept:
+After DC offset removal and Hamming windowing, the FFT is converted into a magnitude spectrum and scanned to identify $f_{\max}$. To avoid selecting noise or leakage bins, only bins that satisfy the following two conditions are kept:
 
 - **Relative magnitude threshold:** a bin is kept only if its
      magnitude is at least `FFT_MAG_THRESHOLD_RATIO = 5 %` of the
@@ -252,31 +252,31 @@ After DC offset removal and Hamming windowing, the FFT is converted into a magni
 - **Local-peak check:** the bin must be strictly greater than both
      neighbours. When a true frequency is present, the FFT shows a main peak surrounded by smaller neighbouring bins caused by spectral leakage. By keeping only bins that are greater than both neighbours, the algorithm selects the central peak and discards the side bins.
 
-Among the surviving candidates, the one with the highest frequency is selected as \(f_{\max}\), since adaptive sampling must track the highest significant component rather than the strongest one.
+Among the surviving candidates, the one with the highest frequency is selected as $f_{\max}$, since adaptive sampling must track the highest significant component rather than the strongest one.
 
 **Adaptive rate.**  
-Once \(f_{\max}\) is known, the adaptive sampling rate is set as
+Once $f_{\max}$ is known, the adaptive sampling rate is set as
 
-\[
+$$
 f_{\text{adaptive}} = 2.2 \cdot f_{\max}
-\]
+$$
 
 The factor 2.2 introduces a small safety margin over the strict Nyquist bound, compensating for the limited FFT bin resolution.
 
 **Result.**  
-For a 5 Hz test signal, the FFT returns \(f_{\max} \approx 4.88\) Hz. This is consistent with the FFT bin resolution, since with a 500 Hz sampling rate and 512 samples each bin corresponds to
+For a 5 Hz test signal, the FFT returns $f_{\max} \approx 4.88$ Hz. This is consistent with the FFT bin resolution, since with a 500 Hz sampling rate and 512 samples each bin corresponds to
 
-\[
+$$
 \frac{500}{512} \approx 0.98 \text{ Hz}
-\]
+$$
 
 so a 5 Hz component is detected at
 
-\[
+$$
 5 \cdot \frac{500}{512} \approx 4.88 \text{ Hz}
-\]
+$$
 
-The resulting adaptive rate is therefore \(f_{\text{adaptive}} \approx 10.7\) Hz, corresponding to about a \(47\times\) reduction with respect to the initial 500 Hz oversampling rate, while still preserving the waveform correctly.
+The resulting adaptive rate is therefore $f_{\text{adaptive}} \approx 10.7$ Hz, corresponding to about a $47\times$ reduction with respect to the initial 500 Hz oversampling rate, while still preserving the waveform correctly.
 
 ![Adaptive sampling of the 5 Hz signal](sampling/docs/sin5hz_ric_adapt.png)
 
@@ -471,19 +471,19 @@ To verify that the FFT pipeline correctly identifies the highest significant fre
 
 The tested signals were:
 
-\[
+$$
 s_1(t)=2\sin(2\pi\cdot 5t)+5\sin(2\pi\cdot 25t)
-\]
+$$
 
-\[
+$$
 s_2(t)=5\sin(2\pi\cdot 5t)+2\sin(2\pi\cdot 25t)
-\]
+$$
 
-\[
+$$
 s_3(t)=5\sin(2\pi\cdot 1t)+2\sin(2\pi\cdot 25t)+4\sin(2\pi\cdot 5t)
-\]
+$$
 
-In all three cases, the system consistently reported an FFT-estimated maximum frequency of about \(25.39\) Hz. This value is coherent with the FFT resolution.
+In all three cases, the system consistently reported an FFT-estimated maximum frequency of about $25.39$ Hz. This value is coherent with the FFT resolution.
 
 ![FFT output for signal 1](sampling/docs/sig1.png)
 
@@ -531,19 +531,19 @@ When the condition is satisfied, the detected anomaly is replaced with the local
 
 The graph compares the adaptive sampling rates obtained after the FFT is computed in three cases: dirty signal, signal filtered with Z-score and signal filtered with Hampel.
 
-![Adaptive sampling rate after Z-score and Hampel filtering](sampling\docs\fig4_adaptive_rate.png)
+![Adaptive sampling rate after Z-score and Hampel filtering](sampling/docs/fig4_adaptive_rate.png)
 
-The first clear result is that the dirty signal always leads to very high adaptive rates, close to the oversampling regime. The reason is that a spike is a very abrupt variation in the time domain which produces in the spectrum energy spread over a wide frequency range. Because of this, the FFT interprets the dirty signal as containing much faster components than the original sinusoid, and the estimated \(f_{\max}\) becomes artificially high.
+The first clear result is that the dirty signal always leads to very high adaptive rates, close to the oversampling regime. The reason is that a spike is a very abrupt variation in the time domain which produces in the spectrum energy spread over a wide frequency range. Because of this, the FFT interprets the dirty signal as containing much faster components than the original sinusoid, and the estimated $f_{\max}$ becomes artificially high.
 
-The Z-score results are not satisfactory. As already discussed, this filter is not well suited to impulsive spikes. For small \(p\), increasing the window size gives only a slight improvement: the effect of a single spike is diluted over a larger moving window, but the spike also stays inside that window for longer, so its impact is not removed completely.
+The Z-score results are not satisfactory. As already discussed, this filter is not well suited to impulsive spikes. For small $p$, increasing the window size gives only a slight improvement: the effect of a single spike is diluted over a larger moving window, but the spike also stays inside that window for longer, so its impact is not removed completely.
 
-The Hampel filter behaves much better, but its performance depends strongly on the window size. With \(W=5\), the recovery is almost perfect only for \(p=0.01\). When \(p\) increases, the window becomes too small: multiple nearby outliers can affect the local median and reduce the effectiveness of the filter, so the adaptive rate remains high.
+The Hampel filter behaves much better, but its performance depends strongly on the window size. With $W=5$, the recovery is almost perfect only for $p=0.01$. When $p$ increases, the window becomes too small: multiple nearby outliers can affect the local median and reduce the effectiveness of the filter, so the adaptive rate remains high.
 
-With \(W=15\), Hampel gives the best overall behaviour in this graph. For low contamination it brings the adaptive rate very close to the ideal one, and even when \(p\) increases it still performs clearly better than Z-score. This suggests that the window is large enough to make the median and MAD stable, while still remaining local enough to follow the waveform.
+With $W=15$, Hampel gives the best overall behaviour in this graph. For low contamination it brings the adaptive rate very close to the ideal one, and even when $p$ increases it still performs clearly better than Z-score. This suggests that the window is large enough to make the median and MAD stable, while still remaining local enough to follow the waveform.
 
-With \(W=40\), the filter still removes a relevant part of the spike contamination, but the result is no longer as good as with \(W=15\). In this case the window is robust enough to detect many spikes, but it becomes less local. As a consequence, the replacement values are less tied to the instantaneous shape of the signal, and the filtered waveform may still contain distortions or local discontinuities. These are enough to leave residual high-frequency content in the spectrum, so the FFT still returns an adaptive rate significantly above the ideal one.
+With $W=40$, the filter still removes a relevant part of the spike contamination, but the result is no longer as good as with $W=15$. In this case the window is robust enough to detect many spikes, but it becomes less local. As a consequence, the replacement values are less tied to the instantaneous shape of the signal, and the filtered waveform may still contain distortions or local discontinuities. These are enough to leave residual high-frequency content in the spectrum, so the FFT still returns an adaptive rate significantly above the ideal one.
 
-The case \(W=100\) is particularly interesting. Since the signal frequency is \(5\) Hz and the oversampling frequency is \(500\) Hz, one period of the clean signal is represented by exactly \(100\) samples. This means that the filter window spans one full cycle of the waveform. For a sinusoidal signal ranging between \(0\) and \(3.3\) V, the median of the window is approximately \(1.65\) V. Therefore, when a spike is detected, it is replaced by a value close to \(1.65\) V independently of the local phase of the signal. If the neighbouring samples are far from this value, the replacement introduces a sharp local transition. This abrupt step injects new high-frequency components into the spectrum, causing again a strong FFT response at high frequencies. 
+The case $W=100$ is particularly interesting. Since the signal frequency is $5$ Hz and the oversampling frequency is $500$ Hz, one period of the clean signal is represented by exactly $100$ samples. This means that the filter window spans one full cycle of the waveform. For a sinusoidal signal ranging between $0$ and $3.3$ V, the median of the window is approximately $1.65$ V. Therefore, when a spike is detected, it is replaced by a value close to $1.65$ V independently of the local phase of the signal. If the neighbouring samples are far from this value, the replacement introduces a sharp local transition. This abrupt step injects new high-frequency components into the spectrum, causing again a strong FFT response at high frequencies. 
 
 
 #### Detection performance
@@ -561,15 +561,15 @@ The **Hampel filter** shows much better detection performance overall, with **hi
 
 To evaluate how well the filters reconstruct the clean signal, the **Mean Error Reduction (MER)** is used:
 
-\[
+$$
 MER = 1 - \frac{MSE_{\text{filtered}}}{MSE_{\text{dirty}}}
-\]
+$$
 
-where \(MSE_{\text{dirty}}\) is the mean squared error between the dirty and clean signal, while \(MSE_{\text{filtered}}\) is the mean squared error between the filtered and clean signal. 
+where $MSE_{\text{dirty}}$ is the mean squared error between the dirty and clean signal, while $MSE_{\text{filtered}}$ is the mean squared error between the filtered and clean signal. 
 
-The graph confirms that the **Z-score filter** has limited reconstruction capability. Its MER decreases as the anomaly probability increases, and the worst case is again the small window \(W=5\), where the filter is almost unable to improve the signal. Larger windows slightly mitigate the effect of the spikes, but the overall reconstruction quality remains unsatisfactory, especially for higher contamination.
+The graph confirms that the **Z-score filter** has limited reconstruction capability. Its MER decreases as the anomaly probability increases, and the worst case is again the small window $W=5$, where the filter is almost unable to improve the signal. Larger windows slightly mitigate the effect of the spikes, but the overall reconstruction quality remains unsatisfactory, especially for higher contamination.
 
-The **Hampel filter** instead shows consistently high MER values, confirming that it is much more effective in restoring the clean waveform. The only clear degradation appears for \(W=5\) when \(p\) becomes large, because with such a small window nearby outliers can more easily contaminate the local median and reduce the effectiveness of the correction. 
+The **Hampel filter** instead shows consistently high MER values, confirming that it is much more effective in restoring the clean waveform. The only clear degradation appears for $W=5$ when $p$ becomes large, because with such a small window nearby outliers can more easily contaminate the local median and reduce the effectiveness of the correction. 
 
 This graph also highlights an important point: a high MER does not automatically imply a correct recovery of the FFT-estimated `f_max`. MER measures the average time-domain reconstruction quality, while `f_max` is much more sensitive to residual local discontinuities and high-frequency artefacts.
 
@@ -580,6 +580,6 @@ This graph also highlights an important point: a high MER does not automatically
 
 For both filters, the execution time increases with the window size, since the sliding window must be processed at every sample. The increase is much steeper for Hampel, because it relies on repeated sorting operations to compute median and MAD, whereas Z-score only computes mean and standard deviation.
 
-The only exception is \(W=5\), where Hampel is slightly faster. In this case, sorting only a few samples is still very cheap, while Z-score still has to perform the same local computations for every sample. As the window becomes larger, the sorting cost grows rapidly and Hampel becomes significantly more expensive.
+The only exception is $W=5$, where Hampel is slightly faster. In this case, sorting only a few samples is still very cheap, while Z-score still has to perform the same local computations for every sample. As the window becomes larger, the sorting cost grows rapidly and Hampel becomes significantly more expensive.
 
 This result is important because longer execution time means the CPU remains active for more time, which increases energy consumption. In addition, larger windows also require more temporary storage, so the trade-off is not only in time, but also in memory. Overall, Hampel provides better robustness, but at a higher computational, energy and memory cost.
