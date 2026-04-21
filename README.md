@@ -491,13 +491,13 @@ In all three cases, the system consistently reported an FFT-estimated maximum fr
 
 This subsection evaluates the robustness of the adaptive sampling pipeline when the original clean signal is corrupted by two non-ideal components: a small Gaussian baseline noise and a sparse anomaly-spike process. In particular, the noisy signal follows the assignment model
 
-\[
+$$
 s(t)=2\sin(2\pi\cdot 3t)+4\sin(2\pi\cdot 5t)+n(t)+A(t)
-\]
+$$
 
 where 
-- \(n(t)\) is a zero-mean Gaussian noise term with standard deviation \(\sigma=0.2\)
-- \(A(t)\) is a sparse spike component such that, with probability \(p\), a large outlier with random sign and magnitude in the range \([5,15]\) is injected.
+- $n(t)$ is a zero-mean Gaussian noise term with standard deviation $\sigma=0.2$
+- $A(t)$ is a sparse spike component such that, with probability $p$, a large outlier with random sign and magnitude in the range $[5,15]$ is injected.
 
 In the implementation, noise and anomalies are injected in a separate task on the samples of the clean signal after they have already been acquired at the oversampling frequency. This design makes it straightforward to preserve a clean ground truth and to compare, sample by sample, the contaminated and filtered versions of the signal. The same ground truth is then used to evaluate the performance of the filters.
 
@@ -505,26 +505,26 @@ Two sliding-window filters are considered: **Z-score** and **Hampel**.
 
 In the **Z-score filter**, for each sample a local mean and a local standard deviation are computed over a window centered around the current point. A sample is classified as anomalous when its distance from the local mean exceeds a threshold proportional to the local standard deviation:
 
-\[
+$$
 |x_i-\mu_w|>k\sigma_w
-\]
+$$
 
-where \(\mu_w\) and \(\sigma_w\) are the mean and standard deviation computed inside the window, and \(k\) is a threshold parameter. When the condition is satisfied, the detected anomaly is replaced with the local mean. 
+where $\mu_w$ and $\sigma_w$ are the mean and standard deviation computed inside the window, and $k$ is a threshold parameter. When the condition is satisfied, the detected anomaly is replaced with the local mean. 
 The main limitation of this method is that a spike influences the same mean and standard deviation used for detection. As a consequence, the threshold becomes larger, and the anomaly may no longer exceed it and therefore remain undetected.
 
-The **Hampel filter** replaces these classical statistics with robust ones. In particular, it uses the local median \(m_w\) and the MAD (Median Absolute Deviation), defined as
+The **Hampel filter** replaces these classical statistics with robust ones. In particular, it uses the local median $m_w$ and the MAD (Median Absolute Deviation), defined as
 
-\[
+$$
 MAD = \mathrm{median}(|x_j-m_w|)
-\]
+$$
 
-where \(m_w\) is the median of the samples inside the window. The anomaly test becomes
+where $m_w$ is the median of the samples inside the window. The anomaly test becomes
 
-\[
+$$
 |x_i-m_w|>k\cdot 1.4826 \cdot MAD
-\]
+$$
 
-When the condition is satisfied, the detected anomaly is replaced with the local median. The factor \(1.4826\) rescales the MAD so that it is comparable to the standard deviation under Gaussian assumptions. Since median and MAD are much less sensitive to outliers than mean and standard deviation, the Hampel filter is expected to be more robust when the signal is affected by impulsive spikes.
+When the condition is satisfied, the detected anomaly is replaced with the local median. The factor $1.4826$ rescales the MAD so that it is comparable to the standard deviation under Gaussian assumptions. Since median and MAD are much less sensitive to outliers than mean and standard deviation, the Hampel filter is expected to be more robust when the signal is affected by impulsive spikes.
 
 
 #### Adaptive sampling frequency before and after filtering
