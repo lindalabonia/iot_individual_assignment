@@ -495,7 +495,7 @@ $$
 In all three cases, the system consistently reported an FFT-estimated maximum frequency of about $25.39$ Hz. This value is coherent with the FFT resolution.
 
 <p align="center">
-  <img src="sampling/docs/sig1.png" alt="FFT output for signal 1" width="640">
+  <img src="sampling/docs/sig1.png" alt="FFT output for signal 1" width="820">
 </p>
 
 ### 2. Anomaly-aware filtering under noisy and spike-contaminated signals
@@ -542,7 +542,7 @@ When the condition is satisfied, the detected anomaly is replaced with the local
 The graph compares the adaptive sampling rates obtained after the FFT is computed in three cases: dirty signal, signal filtered with Z-score and signal filtered with Hampel.
 
 <p align="center">
-  <img src="sampling/docs/fig4_adaptive_rate.png" alt="Adaptive sampling rate after Z-score and Hampel filtering" width="700">
+  <img src="sampling/docs/fig4_adaptive_rate.png" alt="Adaptive sampling rate after Z-score and Hampel filtering" width="880">
 </p>
 
 The first clear result is that the dirty signal always leads to very high adaptive rates, close to the oversampling regime. The reason is that a spike is a very abrupt variation in the time domain which produces in the spectrum energy spread over a wide frequency range. Because of this, the FFT interprets the dirty signal as containing much faster components than the original sinusoid, and the estimated $f_{\max}$ becomes artificially high.
@@ -560,7 +560,7 @@ The case $W=100$ is particularly interesting. Since the signal frequency is $5$ 
 #### Detection performance
 
 <p align="center">
-  <img src="sampling/docs/fig1_detection.png" alt="TPR and FPR of Z-score and Hampel filters under different anomaly probabilities and window sizes" width="700">
+  <img src="sampling/docs/fig1_detection.png" alt="TPR and FPR of Z-score and Hampel filters under different anomaly probabilities and window sizes" width="880">
 </p>
 
 The graph shows that the **Z-score filter** has a **decreasing TPR**. The reason is that spikes increase the local mean and standard deviation, and therefore also the detection threshold; as a result, many anomalies are no longer detected. Using larger windows slightly mitigates the impact of a single spike, but not enough to obtain good detection performance. On the other hand, the **FPR is null in all cases**. This is the other side of the same effect: the filter is very conservative and rarely classifies normal samples as anomalies.
@@ -570,7 +570,7 @@ The **Hampel filter** shows much better detection performance overall, with **hi
 #### Mean Error Reduction (MER)
 
 <p align="center">
-  <img src="sampling/docs/fig2_mer.png" alt="Mean Error Reduction of Z-score and Hampel filters under different anomaly probabilities and window sizes" width="700">
+  <img src="sampling/docs/fig2_mer.png" alt="Mean Error Reduction of Z-score and Hampel filters under different anomaly probabilities and window sizes" width="880">
 </p>
 
 To evaluate how well the filters reconstruct the clean signal, the **Mean Error Reduction (MER)** is used:
@@ -590,7 +590,7 @@ This graph also highlights an important point: a high MER does not automatically
 #### Execution time and computational trade-off
 
 <p align="center">
-  <img src="sampling/docs/fig3_exec.png" alt="Execution time of Z-score and Hampel filters under different anomaly probabilities and window sizes" width="700">
+  <img src="sampling/docs/fig3_exec.png" alt="Execution time of Z-score and Hampel filters under different anomaly probabilities and window sizes" width="880">
 </p>
 
 For both filters, the execution time increases with the window size, since the sliding window must be processed at every sample. The increase is much steeper for Hampel, because it relies on repeated sorting operations to compute median and MAD, whereas Z-score only computes mean and standard deviation.
