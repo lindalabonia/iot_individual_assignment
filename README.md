@@ -428,7 +428,7 @@ To reflect the capabilities of each protocol stack, two distinct measurement met
 The two scenarios are not identical, but the **order of magnitude** is what matters.
 
 <p align="center">
-  <img src="sampling/docs/latency_lora.png" alt="LoRa latency" width="640">
+  <img src="sampling/docs/latency_lora.png" alt="LoRa latency" width="520">
 </p>
 
 In **LoRa** mode the measured values sit around ~6 s, consistent with
@@ -437,7 +437,7 @@ and `sendReceive()` returns as soon as a downlink is received in one
 of the two windows, or when RX2 closes with no downlink. This floor is structural and cannot be reduced without leaving Class A.
 
 <p align="center">
-  <img src="sampling/docs/latency_wifi.png" alt="WiFi latency" width="640">
+  <img src="sampling/docs/latency_wifi.png" alt="WiFi latency" width="520">
 </p>
 
 In **WiFi** mode latencies fluctuate between ~15 ms and ~144 ms, with
