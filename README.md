@@ -183,17 +183,16 @@ If your board is not on `COM3`, either edit `upload_port` / `monitor_port` in `p
 
 ### Reproducing the energy measurements
 
-The current traces shown in [Performance evaluation](#performance-evaluation) were captured with an **INA219** module inserted in series with the power supply of the ESP32 under test, as illustrated in the figure in that section. A **second ESP32** acts as the INA219 host and streams the instantaneous current over USB.
+The current traces shown in [Performance evaluation](#performance-evaluation) were captured with the setup illustrated in that section: an **INA219** module in series with the *load* ESP32, read by a *monitor* ESP32 that streams the instantaneous current over USB.
 
-- Flash the firmware under test (the main `sampling/` project) on the first board with the desired `config.h` options — for example, `SKIP_TX` for the baseline, or adaptive + MQTT, or adaptive + LoRaWAN.
-- Flash the monitor firmware (the `energy_consumption/` project) on the second board. It reads the INA219 over I2C and prints the current on its serial monitor at 115200 baud.
-- Capture the serial log of the monitor board and plot it to obtain the current-vs-time traces.
+- Flash the `sampling/` firmware on the load board with the desired `config.h` options.
+- Flash the `energy_consumption/` firmware on the monitor board; capture its serial log and plot it to obtain the current-vs-time traces.
 
 ### Reproducing the bonus experiments
 
 To reproduce the Z-score vs Hampel comparison:
 1. Enable `#define BONUS` in `config.h`.
-2. Sweep `ANOMALY_PROB` over `0.01f`, `0.05f`, `0.10f` and `FILTER_WINDOW` over `5`, `15`, `40`, `100`.
+2. Sweep `ANOMALY_PROB` and `FILTER_WINDOW` across the desired parameter values.
 3. Set `ACTIVE_FILTER` to `FILTER_ZSCORE` or `FILTER_HAMPEL`.
 4. Rebuild, flash, and read the serial output: for every parameter combination the firmware reports the metrics used in the bonus section (adaptive frequency after filtering, detection TPR/FPR, MER and filter execution time).
 
