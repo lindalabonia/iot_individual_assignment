@@ -63,7 +63,7 @@ The bonus part further extends the evaluation by testing the robustness of the F
 The complete wiring is shown in the figure below.
 
 <p align="center">
-  <img src="docs/hardware_setup.png" alt="Hardware wiring" width="550">
+  <img src="sampling\docs\hardware_setup.png" alt="Hardware wiring" width="550">
 </p>
 
 ---
