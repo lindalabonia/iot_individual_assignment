@@ -47,7 +47,7 @@ MCP4725 DAC whose output is physically looped back into the ADC input.
 The microcontroller therefore plays both the role of signal source and of
 sensing device.
 
-A central goal of the assignment is to evaluate the overall performance impact of these design choices, in terms of sampling efficiency, communication cost, latency and energy consumption.
+A central goal of the assignment is to evaluate the overall performance impact of these design choices, in terms of **sampling efficiency, communication cost, latency and energy consumption**.
 The bonus part further extends the evaluation by testing the robustness of the FFT-driven adaptive pipeline under noisy and spike-contaminated signals, comparing Z-score and Hampel filtering.
 
 ---
@@ -132,8 +132,8 @@ with the `amplitudes[]` and `frequencies[]` arrays declared in
 `NUM_COMPONENTS` in `config.h`. 
 
 Instead of computing `sin()` at every DAC write, `buildSignalLUT()`
-precomputes a full period of the composite signal into a **lookup
-table** at boot. The LUT is a standard optimisation: at high signal
+precomputes a full period of the composite signal into a *lookup
+table* at boot. The LUT is a standard optimisation: at high signal
 frequencies the cost of a `sin()` call per sample becomes significant
 relative to the time between writes, so precomputing the waveform
 once and cycling through the array is much cheaper.
@@ -182,7 +182,7 @@ Therefore, although the hardware upper bound is much higher, the practical limit
 
 The ADC is an internal peripheral of the ESP32-S3, and a single `analogRead()` takes about **10–20 µs**, depending on the ADC configuration. This corresponds to a theoretical sampling-rate ceiling in the **50–100 kHz** range.
 
-Since the generated test signals are intentionally limited to **25 Hz**, an initial oversampling rate of **500 Hz** was chosen. This value is already much higher than the signal frequency and is therefore sufficient to capture the waveform correctly. The figure below shows that the oversampler reconstructs the signal $ \sin(2\pi \cdot 5t) $ accurately.
+Since the generated test signals are intentionally limited to **25 Hz**, an initial oversampling rate of **500 Hz** was chosen. This value is already much higher than the signal frequency and is therefore sufficient to capture the waveform correctly. The figure below shows that the oversampler reconstructs the signal $\sin(2\pi \cdot 5t)$ accurately.
 
 <p align="center">
   <img src="sampling/docs/sin5hz_ric_oversam.png" alt="Oversampled signal at 500 Hz" width="620">
@@ -191,7 +191,7 @@ Since the generated test signals are intentionally limited to **25 Hz**, an init
 #### Sampling Theorem
 
 The whole point of the adaptive-sampling pipeline rests on the
-**Nyquist–Shannon sampling theorem**: a band-limited signal can be
+*Nyquist–Shannon sampling theorem*: a band-limited signal can be
 reconstructed perfectly from its samples if and only if the sampling
 rate is **strictly greater than twice the highest frequency present
 in the signal**.
@@ -227,7 +227,7 @@ $$
 that is, the signal shifted around the DAC mid-scale. In the frequency domain, the constant term $2048$ appears as a large spike at bin 0, i.e. the DC component. This would dominate the spectrum and make the 5% relative threshold depend on the DC offset rather than on the actual sinusoidal components. To avoid this, the mean of the 512 oversampled samples is subtracted before computing the FFT, so that the DC component is removed and the spectrum reflects only the real frequency content of $s(t)$.
 
 **Hamming windowing.**
-A Hamming window is applied to suppress the **spectral leakage**
+A Hamming window is applied to suppress the *spectral leakage*
 intrinsic to computing the FFT over finite time windows. By
 attenuating the signal amplitude toward the edges of the buffer, the
 Hamming function cancels the boundary discontinuities, improving
@@ -245,7 +245,7 @@ After DC offset removal and Hamming windowing, the FFT is converted into a magni
 - **Local-peak check:** the bin must be strictly greater than both
      neighbours. When a true frequency is present, the FFT shows a main peak surrounded by smaller neighbouring bins caused by spectral leakage. By keeping only bins that are greater than both neighbours, the algorithm selects the central peak and discards the side bins.
 
-Among the surviving candidates, the one with the highest frequency is selected as $f_{\max}$, since adaptive sampling must track the highest significant component rather than the strongest one.
+Among the surviving candidates, the one with the highest frequency is selected as $f_{\max}$, since adaptive sampling must track the **highest** significant component rather than the **strongest** one.
 
 **Adaptive rate.**  
 Once $f_{\max}$ is known, the adaptive sampling rate is set as
@@ -254,7 +254,7 @@ $$
 f_{\text{adaptive}} = 2.2 \cdot f_{\max}
 $$
 
-The factor 2.2 introduces a small safety margin over the strict Nyquist bound, compensating for the limited FFT bin resolution.
+The factor 2.2 introduces a small **safety margin** over the strict Nyquist bound, compensating for the limited FFT bin resolution.
 
 **Result.**  
 For a 5 Hz test signal, the FFT returns $f_{\max} \approx 4.88$ Hz. This is consistent with the FFT bin resolution, since with a 500 Hz sampling rate and 512 samples each bin corresponds to
@@ -269,7 +269,7 @@ $$
 5 \cdot \frac{500}{512} \approx 4.88 \text{ Hz}
 $$
 
-The resulting adaptive rate is therefore $f_{\text{adaptive}} \approx 10.7$ Hz, corresponding to about a $47\times$ reduction with respect to the initial 500 Hz oversampling rate, while still preserving the waveform correctly.
+The resulting adaptive rate is therefore $f_{\text{adaptive}} \approx 10.7$ Hz, corresponding to about a **$47\times$ reduction** with respect to the initial 500 Hz oversampling rate, while still preserving the waveform correctly.
 
 <p align="center">
   <img src="sampling/docs/sin5hz_ric_adapt.png" alt="Adaptive sampling of the 5 Hz signal" width="620">
@@ -300,7 +300,7 @@ device is generating the composite test signal
 
 ### LoRaWAN + TTN
 
-The same avarage can be sent over **LoRaWAN**
+The same average can be sent over **LoRaWAN**
 to **The Things Network** (TTN). 
 
 - **Band.** EU868.
@@ -342,7 +342,7 @@ to **The Things Network** (TTN).
   <p align="center">
     <img src="sampling/docs/classeA_lora.gif" alt="Class A uplink + RX1/RX2 windows" width="520">
   </p>
-  
+
 
 The image below shows the TTN console correctly receiving the
 aggregate values. The test signal during the capture is the same
@@ -385,7 +385,7 @@ of sampling plus continuous signal generation.
 
 Both measurements were taken with adaptive sampling enabled and one
 transmission every 30 s; both traces plot instantaneous current in
-mA, and both share the same ~50 mA baseline (the "always-on" cost of
+mA, and both share the same **~50 mA** baseline (the "always-on" cost of
 the DAC generator + adaptive sampler, already analysed above).
 
 <p align="center">
@@ -393,7 +393,7 @@ the DAC generator + adaptive sampler, already analysed above).
 </p>
 
 In **LoRa** mode the trace is almost flat at baseline between events:
-once per window the current jumps sharply to ~140 mA during the
+once per window the current jumps sharply to **~140 mA** during the
 uplink transmission. The
 Class A receive windows that follow each TX draw so little power that they do not
 even emerge visibly from the baseline on this scale.
@@ -403,7 +403,7 @@ even emerge visibly from the baseline on this scale.
 </p>
 
 In **WiFi** mode the transmission event itself is visible as a tall
-peak at ~200 mA, but a comb of smaller peaks sits on top of the idle
+peak at **~200 mA**, but a comb of smaller peaks sits on top of the idle
 current for the entire run. These additional peaks are the price of keeping the WiFi
 interface associated to the access point between one publish and
 the next. The
@@ -431,7 +431,7 @@ The two scenarios are not identical, but the **order of magnitude** is what matt
   <img src="sampling/docs/latency_lora.png" alt="LoRa latency" width="520">
 </p>
 
-In **LoRa** mode the measured values sit around ~6 s, consistent with
+In **LoRa** mode the measured values sit around **~6 s**, consistent with
 expectations: TTN opens RX1 at +5 s and RX2 at +6 s after each uplink,
 and `sendReceive()` returns as soon as a downlink is received in one
 of the two windows, or when RX2 closes with no downlink. This floor is structural and cannot be reduced without leaving Class A.
@@ -440,7 +440,7 @@ of the two windows, or when RX2 closes with no downlink. This floor is structura
   <img src="sampling/docs/latency_wifi.png" alt="WiFi latency" width="520">
 </p>
 
-In **WiFi** mode latencies fluctuate between ~15 ms and ~144 ms, with
+In **WiFi** mode latencies fluctuate between **~15 ms** and **~144 ms**, with
 visible jitter from one window to the next. The jitter comes from
 WiFi being a shared medium: devices arbitrate access by listening
 first and backing off for a random interval when the channel is busy
@@ -492,7 +492,7 @@ $$
 s_3(t)=5\sin(2\pi\cdot 1t)+2\sin(2\pi\cdot 25t)+4\sin(2\pi\cdot 5t)
 $$
 
-In all three cases, the system consistently reported an FFT-estimated maximum frequency of about $25.39$ Hz. This value is coherent with the FFT resolution.
+In all three cases, the system consistently reported an FFT-estimated maximum frequency of about **$25.39$ Hz**. This value is coherent with the FFT resolution.
 
 <p align="center">
   <img src="sampling/docs/sig1.png" alt="FFT output for signal 1" width="820">
@@ -551,7 +551,7 @@ The Z-score results are not satisfactory. As already discussed, this filter is n
 
 The Hampel filter behaves much better, but its performance depends strongly on the window size. With $W=5$, the recovery is almost perfect only for $p=0.01$. When $p$ increases, the window becomes too small: multiple nearby outliers can affect the local median and reduce the effectiveness of the filter, so the adaptive rate remains high.
 
-With $W=15$, Hampel gives the best overall behaviour in this graph. For low contamination it brings the adaptive rate very close to the ideal one, and even when $p$ increases it still performs clearly better than Z-score. This suggests that the window is large enough to make the median and MAD stable, while still remaining local enough to follow the waveform.
+With $W=15$, Hampel gives the **best overall behaviour** in this graph. For low contamination it brings the adaptive rate very close to the ideal one, and even when $p$ increases it still performs clearly better than Z-score. This suggests that the window is large enough to make the median and MAD stable, while still remaining local enough to follow the waveform.
 
 With $W=40$, the filter still removes a relevant part of the spike contamination, but the result is no longer as good as with $W=15$. In this case the window is robust enough to detect many spikes, but it becomes less local. As a consequence, the replacement values are less tied to the instantaneous shape of the signal, and the filtered waveform may still contain distortions or local discontinuities. These are enough to leave residual high-frequency content in the spectrum, so the FFT still returns an adaptive rate significantly above the ideal one.
 
@@ -585,7 +585,7 @@ The graph confirms that the **Z-score filter** has limited reconstruction capabi
 
 The **Hampel filter** instead shows consistently high MER values, confirming that it is much more effective in restoring the clean waveform. The only clear degradation appears for $W=5$ when $p$ becomes large, because with such a small window nearby outliers can more easily contaminate the local median and reduce the effectiveness of the correction. 
 
-This graph also highlights an important point: a high MER does not automatically imply a correct recovery of the FFT-estimated `f_max`. MER measures the average time-domain reconstruction quality, while `f_max` is much more sensitive to residual local discontinuities and high-frequency artefacts.
+This graph also highlights an important point: **a high MER does not automatically imply a correct recovery of the FFT-estimated `f_max`**. MER measures the average time-domain reconstruction quality, while `f_max` is much more sensitive to residual local discontinuities and high-frequency artefacts.
 
 #### Execution time and computational trade-off
 
@@ -597,4 +597,4 @@ For both filters, the execution time increases with the window size, since the s
 
 The only exception is $W=5$, where Hampel is slightly faster. In this case, sorting only a few samples is still very cheap, while Z-score still has to perform the same local computations for every sample. As the window becomes larger, the sorting cost grows rapidly and Hampel becomes significantly more expensive.
 
-This result is important because longer execution time means the CPU remains active for more time, which increases energy consumption. In addition, larger windows also require more temporary storage, so the trade-off is not only in time, but also in memory. Overall, Hampel provides better robustness, but at a higher computational, energy and memory cost.
+This result is important because longer execution time means the CPU remains active for more time, which increases energy consumption. In addition, larger windows also require more temporary storage, so the trade-off is not only in time, but also in memory. **Overall, Hampel provides better robustness, but at a higher computational, energy and memory cost.**
