@@ -109,11 +109,6 @@ extern const float frequencies[NUM_COMPONENTS];
 #define LORA_DATARATE  5
 #define LORA_PORT      1     // LoRaWAN FPort (1-223)
 
-// TX pacing: no artificial delay between transmissions. We send once per
-// aggregation window (WINDOW_DURATION_SEC). The math for a test session:
-//   ToA at SF7 with 4-byte payload ≈ 50ms
-//   Duty cycle 1%: max 36s/hour airtime → ~720 pkt/hour → OK at 1 pkt/10s
-//   TTN fair use: 30s airtime/day → 600 packets → ~100 min of continuous test
 
 // Heltec V3 SX1262 pins (on-board, no external wiring needed)
 #define LORA_NSS   8

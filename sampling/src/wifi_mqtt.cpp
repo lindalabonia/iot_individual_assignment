@@ -69,7 +69,6 @@ void mqttReconnect() {
 }
 
 // Publish window average as compact JSON.
-// Same data as LoRa binary payload (avg + window number) for fair comparison.
 void mqttPublish(float avgV, int windowNum) {
     if (!mqtt.connected()) mqttReconnect();
     mqtt.loop();  // handle keepalive

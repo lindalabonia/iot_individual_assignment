@@ -63,7 +63,7 @@ float runFFTAndFindMax(double *buf, int n, float samplingFreq) {
 }
 
 // Set the adaptive rate from a detected f_max and start the steady-state
-// sampler. Shared by FFT task (normal mode) and filter task (BONUS mode).
+// sampler.
 void applyAdaptiveRate(float maxFreq) {
     // Nyquist: f_sample > 2*f_max. 2.2x adds ~10% margin to absorb the FFT
     // bin resolution error (e.g. real 5 Hz detected as 4.88 Hz at 0.977 Hz/bin).

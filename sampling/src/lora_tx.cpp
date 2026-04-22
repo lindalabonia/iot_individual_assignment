@@ -33,7 +33,6 @@ void setupLoRa() {
         // Serial.printf("FAIL (%d)\n", state);
         while (1) vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    // Serial.println("OK");
 
     // Heltec V3 board-specific setup:
     // - DIO2 controls the RF switch (antenna path)
