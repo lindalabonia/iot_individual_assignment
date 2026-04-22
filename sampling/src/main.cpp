@@ -67,11 +67,12 @@ void setup() {
     // Precompute lookup table for the DAC signal (sin() computed once, not at runtime)
     buildSignalLUT();
 
-    Serial.printf("Signal: ");
+    Serial.printf("[SIGNAL] ");
     for (int k = 0; k < NUM_COMPONENTS; k++) {
         Serial.printf("%.1f*sin(2pi*%.1ft)", amplitudes[k], frequencies[k]);
         if (k < NUM_COMPONENTS - 1) Serial.printf(" + ");
-     }
+    }
+    Serial.println();
     // Serial.printf("\nOversampling: %.0f Hz, FFT bins: %d\n\n", MAX_SAMPLING_FREQ, FFT_SAMPLES);
 
 
